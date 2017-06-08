@@ -1,4 +1,5 @@
 #include <V9203.h>
+#include <SPI.h>
 #define  V9203EXT
 
 /*=========================================================================================\n
@@ -14,14 +15,67 @@
 * @修改人:  
 * @修改内容: 
 ===========================================================================================*/
-void Bronco_PMCtrl(uint8 pm)
+void Bronco_PMCtrl(char pm)
 {
+	//Power mode is hardwired in devkit, otherwise set both bits high
+	/*
     if(pm==Work_normal)
     {
         GPIO_SetBits(GPIOE, GPIO_Pin_10|GPIO_Pin_11);	
     }
+	*/
+}
+void set_data_cmd_flash(unsigned char cmd, unsigned int dat)
+{
+
+    unsigned char cksum,cmdb;
+    unsigned int send_dat;
+    cmdb = (0x3f&cmd)|0x80;
+    cksum = ~((dat&0x00ff) + (dat>>8) + cmdb);
+ //	cksum = 0;
+	send_dat=dat;
+	tdo_m=SPI.transfer16(cmdb);
+	tdo_d=SPI.transfer16((send_dat>>8));
+	tdo_d=tdo_d<<8;
+	tdo_d+=SPI.transfer16((send_dat));
+	tdo_c=SPI.transfer16(cksum);	
 }
 
+void spi_wr_flash(unsigned int addr, unsigned int dat_h, unsigned int dat_l)
+{
+    set_data_cmd_flash(0x08,dat_l);
+    set_data_cmd_flash(0x0a,dat_h);
+    set_data_cmd_flash(0x0c,addr );
+}
+
+unsigned long spi_rd_flash(unsigned int addr)
+{
+    unsigned long mt_dout;
+
+    set_data_cmd_flash(0x10, addr); 
+    set_data_cmd_flash(0x12, addr);
+    mt_dout = (unsigned long)tdo_d;
+    if((unsigned char)(tdo_m+(unsigned char)(tdo_d&0x00ff)+(unsigned char)(tdo_d>>8))!=(unsigned char)(~tdo_c))
+	{
+        spi_err = 1;
+    }
+	else
+	{
+        spi_err = 0;
+    }
+    set_data_cmd_flash(0x14, addr);
+    mt_dout += (((unsigned long)tdo_d)<<16);
+    if((unsigned char)(tdo_m+(unsigned char)(tdo_d&0x00ff)+(unsigned char)(tdo_d>>8))!=(unsigned char)(~tdo_c))
+	{
+        spi_err = 1;
+    }
+	else
+	{
+        spi_err = 0;
+    }
+    
+    return mt_dout;
+}
 
 /*=========================================================================================\n
 * @function_name: WriteBronco
@@ -37,7 +91,7 @@ void Bronco_PMCtrl(uint8 pm)
 * @修改内容: 
 ===========================================================================================*/
 
-uint8  WriteBronco(uint32 Data,uint16 Addr)
+char  WriteBronco(unsigned int Data,unsigned short Addr)
 {
     //spi_wr_flash(unsigned int addr, unsigned int dat_h, unsigned int dat_l)  
     spi_wr_flash(Addr, (Data>>16), Data);
@@ -57,7 +111,7 @@ uint8  WriteBronco(uint32 Data,uint16 Addr)
 * @修改人:  
 * @修改内容: 
 ===========================================================================================*/
-uint32  ReadBronco(uint16 Addr)
+unsigned int  ReadBronco(unsigned short Addr)
 {
    return spi_rd_flash(Addr);
 }
@@ -77,7 +131,7 @@ uint32  ReadBronco(uint16 Addr)
 ===========================================================================================*/
 void BroncoInit(void)
 {
-    static uint32 ready;
+    static unsigned int ready;
     //Bronco_PMCtrl(Work_normal);
     ready = 0;
     while(ready!=0x100000ff)
@@ -85,20 +139,20 @@ void BroncoInit(void)
             WriteBronco(0x100000ff,0xc000);
             ready=ReadBronco(0xc000);
     }
-    for(uint8 i=0;i<56;i++)
+    for(char i=0;i<56;i++)
     {
         WriteBronco(0,(0xC800+i));
     } 
 
 
-    /*static uint32 spiready;
+    /*static unsigned int spiready;
     spiready=0;
         while(spiready!=0x100000ff)
         {
            WriteBronco(0x100000ff,0xc000);
               spiready=ReadBronco(0xc000);
         }
-        for(uint8 i=0;i<56;i++)
+        for(char i=0;i<56;i++)
         {
             WriteBronco(0x0,0xC800+i);
         } */
@@ -120,10 +174,10 @@ void BroncoInit(void)
 ===========================================================================================*/
 void UpdateBroncoPara(void)
 {
-    uint32 sum;
+    unsigned int sum;
     sum = 0;
     
-    BE_ReadP(EEP_JBTOTAL,(uint8*)&gs_JbPm,sizeof(S_JBPM));
+    BE_ReadP(EEP_JBTOTAL,(char*)&gs_JbPm,sizeof(S_JBPM));
     WriteBronco(0xaa000000,RegMTPARA0); //spi_wr_flash(0xc000,0xaa00,0x0000);	//MT_PARA0			2.27 add 防CF闪
     DelayXms(20);
     WriteBronco(0x000000ff,RegMTPARA0);//spi_wr_flash(0xC000,0x0000,0x00ff);	//MT_PARA0
@@ -243,8 +297,8 @@ void JbpmInit(void)
 {
     //S_JBPM g_JBPm;
     
-    BE_ReadP(EEP_JBTOTAL,(uint8*)&gs_JbPm,sizeof(S_JBPM));
-    if(gs_JbPm.ui_JbCRC == do_CRC((uint8 *)&gs_JbPm,sizeof(S_JBPM)-2))      //RAM中的数据是否完整
+    BE_ReadP(EEP_JBTOTAL,(char*)&gs_JbPm,sizeof(S_JBPM));
+    if(gs_JbPm.ui_JbCRC == do_CRC((char *)&gs_JbPm,sizeof(S_JBPM)-2))      //RAM中的数据是否完整
     {                                                                       //因为以下参数要求定义在两个结构体里面
         EnyB_JbPm_Updata();
     }
@@ -366,12 +420,12 @@ void JbpmInit(void)
         gs_JbPm.ul_URmG=0x513b;             //电压通道比例系数
         gs_JbPm.ul_I1RmG=0x1A2C0;            //电流通道1比例系数
     
-        gs_JbPm.ui_JbCRC=do_CRC((uint8*)&gs_JbPm,sizeof(S_JBPM)-2);     // 校表参数的CRC结果
-        BE_WriteP(EEP_JBTOTAL,(uint8*)&gs_JbPm,sizeof(S_JBPM));
+        gs_JbPm.ui_JbCRC=do_CRC((char*)&gs_JbPm,sizeof(S_JBPM)-2);     // 校表参数的CRC结果
+        BE_WriteP(EEP_JBTOTAL,(char*)&gs_JbPm,sizeof(S_JBPM));
     }
     
 }
-const uint16 RMSAddrTab[] = {RegARTUA,RegARTIA,RegARTUB,RegARTIB,RegARTUC,RegARTIC};
+const unsigned short RMSAddrTab[] = {RegARTUA,RegARTIA,RegARTUB,RegARTIB,RegARTUC,RegARTIC};
 /*=========================================================================================\n
 * @function_name: Brc_CheckDMAData
 * @function_file: Bronco.c
@@ -385,10 +439,10 @@ const uint16 RMSAddrTab[] = {RegARTUA,RegARTIA,RegARTUB,RegARTIB,RegARTUC,RegART
 * @修改人:  
 * @修改内容: 
 ===========================================================================================*/
-uint8 Brc_CheckDMAData(int16* DMAaddr, uint8 ucType)
+char Brc_CheckDMAData(short* DMAaddr, char ucType)
 {
-    int16 iValue,iValueMax;
-    uint8 i,j;
+    short iValue,iValueMax;
+    char i,j;
     
     for (j = 0;j<6;j++)
     {
@@ -458,7 +512,7 @@ uint8 Brc_CheckDMAData(int16* DMAaddr, uint8 ucType)
 ===========================================================================================*/
 void Recording(void)
 {
-    uint16 addr = 0;
+    unsigned short addr = 0;
     GetExtRTC();  
     gs_UIP.ulSecond = gs_ClkTmp.ucSecond; 
     gs_UIP.ulMinute = gs_ClkTmp.ucMinute;
@@ -466,21 +520,21 @@ void Recording(void)
     gs_UIP.ulDay = gs_ClkTmp.ucDay;
     gs_UIP.ul_Energy = gs_EnergyA.lCP + Eny_GetEp1(0,0,ABCPhy,active);
     gs_UIP.ul_NEnergy =gs_NEnergyA.lCP + Eny_GetEp1(0,0,ABCPhy,reactive);
-    for(uint8 i=0;i<3;i++)
+    for(char i=0;i<3;i++)
     {
         gs_UIP.ul_U[i] = ReadBronco(RMSUA+i)/gs_JbPm.ul_URmG;
         gs_UIP.ul_I[i] = ReadBronco(RMSI1A+i)/gs_JbPm.ul_I1RmG;
         gs_UIP.ul_Power[i] = ReadBronco(DATAPA+i)/gs_JbPm.ul_PG ;
         gs_UIP.ul_Npower[i] = ReadBronco(DATAQA+i)/gs_JbPm.ul_PG;
     }
-    SysE2ReadData(EEP_EPFH_PT,(uint8*)&addr,2);
+    SysE2ReadData(EEP_EPFH_PT,(char*)&addr,2);
     if(addr >= (EEP_EPFH_PT +2 + 4*24*6) )
     {
         addr = EEP_EPFH_PT +2;
     }
-    SysE2ParaSetManage(addr,(uint8*)&gs_UIP,36);
+    SysE2ParaSetManage(addr,(char*)&gs_UIP,36);
     addr +=36;
-    SysE2ParaSetManage(EEP_EPFH_PT,(uint8*)&addr,2);
+    SysE2ParaSetManage(EEP_EPFH_PT,(char*)&addr,2);
 }
 /*256点hanning窗*/
 const float Hannwindow[256]=
@@ -744,9 +798,9 @@ const float Hannwindow[256]=
 };
 //COMPLEX fftx[256];
 
-uint8 get_order(uint16 size)
+char get_order(unsigned short size)
 {
-    int16 order;
+    short order;
     size = (size - 1) >> (0);
     order = -1;
     do {
@@ -757,13 +811,13 @@ uint8 get_order(uint16 size)
 }
 
 
-void fft(COMPLEX *x, uint16 Num)			
+void fft(COMPLEX *x, unsigned short Num)			
 {   
     float temp_re; 
     float temp_im;
-    uint16 i,j,k,P; 
-    uint16  LH,K,B;
-    uint8 num; 
+    unsigned short i,j,k,P; 
+    unsigned short  LH,K,B;
+    char num; 
     COMPLEX tmp;
     LH=Num/2; 
     j=LH; 
@@ -828,10 +882,10 @@ void fft(COMPLEX *x, uint16 Num)
 * @修改人:  
 * @修改内容: 
 ===========================================================================================*/
-void FFT_Task(int16 *indata)
+void FFT_Task(short *indata)
 {
-    uint16 i;	
-    uint16  buffSize;  
+    unsigned short i;	
+    unsigned short  buffSize;  
     buffSize = 256;
     for(i=0; i<buffSize ;i++)
     {								  
@@ -849,7 +903,7 @@ void FFT_Task(int16 *indata)
 //        gs_RawData.Raw_UA[i] = fftx[i].real;
 //    }
 }
-//const uint16 FFTE2SaveTab[] = {EEP_FFTUA_PT,EEP_FFTIA_PT,
+//const unsigned short FFTE2SaveTab[] = {EEP_FFTUA_PT,EEP_FFTIA_PT,
 //                               EEP_FFTUB_PT,EEP_FFTIB_PT,
 //                               EEP_FFTUC_PT,EEP_FFTIC_PT};
 //void Data_FFTProc(void)
@@ -860,10 +914,10 @@ void FFT_Task(int16 *indata)
 ////            byte[3]: UI
 ////            频率分辨率6.25，最多能计算到15次谐波
 ////
-//    uint8  ucCurPt;
-//    uint8  j;
-//    uint16 i,pt;
-//    uint16 ucTemp,ucSampLen;
+//    char  ucCurPt;
+//    char  j;
+//    unsigned short i,pt;
+//    unsigned short ucTemp,ucSampLen;
 //    Word16 uiSamp;
 //
 //    ucSampLen = BUFFSIZE/6;
@@ -873,8 +927,8 @@ void FFT_Task(int16 *indata)
 //        {
 //            ucTemp = 2*(i*6+j);
 //            ucCurPt = (SPI1_Buffer_Rx[ucTemp] >> 1) & 0x07;
-//            uiSamp.word =(int16)((((SPI1_Buffer_Rx[ucTemp]&0x7ff0)<<7)|((SPI1_Buffer_Rx[ucTemp+1]&0x7ff0)>>4))>>6);
-//            BE_WriteP(FFTE2SaveTab[ucCurPt]+pt,(uint8*)&uiSamp.word,2);
+//            uiSamp.word =(short)((((SPI1_Buffer_Rx[ucTemp]&0x7ff0)<<7)|((SPI1_Buffer_Rx[ucTemp+1]&0x7ff0)>>4))>>6);
+//            BE_WriteP(FFTE2SaveTab[ucCurPt]+pt,(char*)&uiSamp.word,2);
 //        }
 //    }
 //    

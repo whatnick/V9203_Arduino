@@ -20,7 +20,7 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB
   }
   Serial.println("Start V9203");
-  /*Initialise the ATM90E32 + SPI port */
+  /*Initialise the V9203 + SPI port */
   BroncoInit();
   UpdateBroncoPara();
   delay(1000);

@@ -241,42 +241,42 @@ enum
 
 typedef struct
 {
-    uint32  RacWARTU;           //全波电压有效值比差寄存器
-    uint32  RacWARTI;           //全波电流有效值比差寄存器
-    uint32  RacWAPT;            //全波有功功率比差寄存器
-    uint32  RacWWAPT;           //全波有功功率二次补偿寄存器                
-    uint32  RacREWWAPT;         //全波无功功功率二次补偿寄存器                
+    unsigned int  RacWARTU;           //全波电压有效值比差寄存器
+    unsigned int  RacWARTI;           //全波电流有效值比差寄存器
+    unsigned int  RacWAPT;            //全波有功功率比差寄存器
+    unsigned int  RacWWAPT;           //全波有功功率二次补偿寄存器                
+    unsigned int  RacREWWAPT;         //全波无功功功率二次补偿寄存器                
 }S_JBRE;
 
 
 typedef struct 
 {
-    uint16 ui_MeterC;           // 表常数
-    uint16 ui_Un;               // 标称电压
-    uint16 ui_Ib;               // 标称电流
-    uint16 ui_Resve1;           //保留
+    unsigned short ui_MeterC;           // 表常数
+    unsigned short ui_Un;               // 标称电压
+    unsigned short ui_Ib;               // 标称电流
+    unsigned short ui_Resve1;           //保留
     
-    uint32  RacEGYTH;           //有功门限值寄存器
-    uint32  RacCTHH;             //起动/潜动判断门限值寄存器
-    uint32  RacCTHL;             //起动/潜动判断门限值寄存器
-    uint32 RacZZDCUM;        //电流检测门限值
-    uint32  RacWAEC0;         //角差0
-    uint32 RacMTPARA0;
-    uint32 RacMTPARA1;
-    uint32 RacMTPARA2;
-    uint32  RacANCtrl0;         //模拟控制寄存器0
-    uint32  RacANCtrl1;         //模拟控制寄存器1
-    uint32  RacANCtrl2;         //模拟控制寄存器2
-    uint32  RacANCtrl3;         //模拟控制寄存器2
+    unsigned int  RacEGYTH;           //有功门限值寄存器
+    unsigned int  RacCTHH;             //起动/潜动判断门限值寄存器
+    unsigned int  RacCTHL;             //起动/潜动判断门限值寄存器
+    unsigned int RacZZDCUM;        //电流检测门限值
+    unsigned int  RacWAEC0;         //角差0
+    unsigned int RacMTPARA0;
+    unsigned int RacMTPARA1;
+    unsigned int RacMTPARA2;
+    unsigned int  RacANCtrl0;         //模拟控制寄存器0
+    unsigned int  RacANCtrl1;         //模拟控制寄存器1
+    unsigned int  RacANCtrl2;         //模拟控制寄存器2
+    unsigned int  RacANCtrl3;         //模拟控制寄存器2
     S_JBRE  gs_JBA;             //A相比差组
     S_JBRE  gs_JBB;             //B相比差组
     S_JBRE  gs_JBC;             //C相比差组
-    uint32 ul_PG;               //功率比例系数
-    uint32 ul_URmG;             //电压通道比例系数
-    uint32 ul_I1RmG;            //电流通道1比例系数
+    unsigned int ul_PG;               //功率比例系数
+    unsigned int ul_URmG;             //电压通道比例系数
+    unsigned int ul_I1RmG;            //电流通道1比例系数
 
-    uint16 ui_Resve2;           //保留
-    uint16 ui_JbCRC;            // 校表参数的CRC结果
+    unsigned short ui_Resve2;           //保留
+    unsigned short ui_JbCRC;            // 校表参数的CRC结果
 }S_JBPM;
 
 V9203EXT S_JBPM  gs_JbPm;            //校表参数
@@ -289,21 +289,21 @@ typedef struct
 
 V9203EXT COMPLEX  fftx[256];
 
-V9203EXT volatile uint8 guc_CommDelayTime;                                 //通讯等待延时
-V9203EXT uint8 guc_CommDelayFlag;
-V9203EXT uint8 guc_Phy;          //相位
-V9203EXT uint8 guc_DODMAFlg;
-//BRONCOEXT uint8 guc_FFT_Flg;
+V9203EXT volatile char guc_CommDelayTime;                                 //通讯等待延时
+V9203EXT char guc_CommDelayFlag;
+V9203EXT char guc_Phy;          //相位
+V9203EXT char guc_DODMAFlg;
+//BRONCOEXT char guc_FFT_Flg;
 
 
-uint8  WriteBronco(uint32 Data,uint16 Addr);
-void Bronco_PMCtrl(uint8 pm);
-uint32  ReadBronco(uint16 Addr);
+char  WriteBronco(unsigned int Data,unsigned short Addr);
+void Bronco_PMCtrl(char pm);
+unsigned int  ReadBronco(unsigned short Addr);
 void BroncoInit(void);
 void UpdateBroncoPara(void);
 void JbpmInit(void);
-uint8 Brc_CheckDMAData(int16* DMAaddr, uint8 ucType);
+char Brc_CheckDMAData(short* DMAaddr, char ucType);
 void Recording(void);
-void FFT_Task(int16 *indata);
+void FFT_Task(short *indata);
 void Data_FFTProc(void);
 #endif

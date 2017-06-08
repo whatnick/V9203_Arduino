@@ -4,7 +4,7 @@
 
   Copyright (c) 2016 whatnick
 
-  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+  Permission is hereby granted, free of unsigned charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
   The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
@@ -280,7 +280,7 @@ typedef struct
 }S_JBPM;
 
 V9203EXT S_JBPM  gs_JbPm;            //校表参数
-
+/*
 typedef struct 
 {       //构造复数结构
     float  real;
@@ -288,22 +288,22 @@ typedef struct
 } COMPLEX;
 
 V9203EXT COMPLEX  fftx[256];
+*/
+V9203EXT volatile unsigned char guc_CommDelayTime;                                 //通讯等待延时
+V9203EXT unsigned char guc_CommDelayFlag;
+V9203EXT unsigned char guc_Phy;          //相位
+V9203EXT unsigned char guc_DODMAFlg;
+//BRONCOEXT unsigned char guc_FFT_Flg;
 
-V9203EXT volatile char guc_CommDelayTime;                                 //通讯等待延时
-V9203EXT char guc_CommDelayFlag;
-V9203EXT char guc_Phy;          //相位
-V9203EXT char guc_DODMAFlg;
-//BRONCOEXT char guc_FFT_Flg;
 
-
-char  WriteBronco(unsigned int Data,unsigned short Addr);
-void Bronco_PMCtrl(char pm);
+unsigned char  WriteBronco(unsigned int Data,unsigned short Addr);
+void Bronco_PMCtrl(unsigned char pm);
 unsigned int  ReadBronco(unsigned short Addr);
 void BroncoInit(void);
 void UpdateBroncoPara(void);
 void JbpmInit(void);
-char Brc_CheckDMAData(short* DMAaddr, char ucType);
-void Recording(void);
-void FFT_Task(short *indata);
-void Data_FFTProc(void);
+//unsigned char Brc_CheckDMAData(short* DMAaddr, unsigned char ucType);
+//void Recording(void);
+//void FFT_Task(short *indata);
+//void Data_FFTProc(void);
 #endif

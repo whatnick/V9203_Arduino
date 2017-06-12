@@ -30,4 +30,5 @@ void loop() {
 	Serial.println(ReadBronco(DATAPA));
 	Serial.println(ReadBronco(DATAPB));
 	Serial.println(ReadBronco(DATAPC));
+	delay(1000);
 }

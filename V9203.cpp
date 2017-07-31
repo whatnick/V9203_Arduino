@@ -41,6 +41,9 @@ void set_data_cmd_flash(unsigned char cmd, unsigned int dat)
     cksum = ~((dat&0x00ff) + (dat>>8) + cmdb);
  //	cksum = 0;
 	send_dat=dat;
+	
+
+	SPI.beginTransaction(SPISettings(200000, MSBFIRST, SPI_MODE1));
 	digitalWrite(_cs,LOW);
 	tdo_m=SPI.transfer16(cmdb);
 	tdo_d=SPI.transfer16((send_dat>>8));
@@ -48,6 +51,7 @@ void set_data_cmd_flash(unsigned char cmd, unsigned int dat)
 	tdo_d+=SPI.transfer16((send_dat));
 	tdo_c=SPI.transfer16(cksum);
 	digitalWrite(_cs,HIGH);
+	SPI.endTransaction();
 }
 
 void spi_wr_flash(unsigned int addr, unsigned int dat_h, unsigned int dat_l)
@@ -226,9 +230,6 @@ void BroncoInit(void)
  
 	/* Enable SPI */  
 	SPI.begin();
-	SPI.setBitOrder(MSBFIRST);
-    SPI.setDataMode(SPI_MODE1);
-    SPI.setClockDivider(SPI_CLOCK_DIV32);
 	
     ready = 0;
     while(ready!=0x100000ff)
@@ -236,7 +237,8 @@ void BroncoInit(void)
 			Serial.println("Waiting for chip");
             WriteBronco(0x100000ff,0xc000);
             ready=ReadBronco(0xc000);
-			Serial.println(ready);
+			Serial.print("0x");
+			Serial.println(ready,HEX);
 			delay(1000);
     }
     for(unsigned char i=0;i<56;i++)

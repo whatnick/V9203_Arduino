@@ -45,11 +45,11 @@ void set_data_cmd_flash(unsigned char cmd, unsigned int dat)
 
 	SPI.beginTransaction(SPISettings(200000, MSBFIRST, SPI_MODE3));
 	digitalWrite(_cs,LOW);
-	tdo_m=SPI.transfer16(cmdb);
-	tdo_d=SPI.transfer16((send_dat>>8));
+	tdo_m=SPI.transfer(cmdb);
+	tdo_d=SPI.transfer((send_dat>>8));
 	tdo_d=tdo_d<<8;
-	tdo_d+=SPI.transfer16((send_dat));
-	tdo_c=SPI.transfer16(cksum);
+	tdo_d+=SPI.transfer((send_dat));
+	tdo_c=SPI.transfer(cksum);
 	digitalWrite(_cs,HIGH);
 	SPI.endTransaction();
 }

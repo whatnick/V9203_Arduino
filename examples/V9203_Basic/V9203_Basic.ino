@@ -27,11 +27,13 @@ void setup() {
 }
 
 void loop() {
-	Serial.print("DATAPA:0x");
-	Serial.println(ReadBronco(DATAPA));
-	Serial.print("DATAPB:0x");
-	Serial.println(ReadBronco(DATAPB));
-	Serial.print("DATAPC:0x");
-	Serial.println(ReadBronco(DATAPC));
+  Serial.print("RegCKSUM:0x");
+  Serial.println(ReadBronco(RegCKSUM));
+	Serial.print("DATAFREQA:0x");
+	Serial.println(ReadBronco(DATAFREQA));
+	Serial.print("DATAFREQA:0x");
+	Serial.println(ReadBronco(DATAFREQA));
+	Serial.print("DATAFREQA:0x");
+	Serial.println(ReadBronco(DATAFREQA));
 	delay(1000);
 }
